@@ -50,6 +50,8 @@ def check_tick(routines: list[Routine], now: datetime, cfg: Config) -> list[Anom
 
 
 def _late_start(r: Routine, now: datetime, today: date, minute: int, cfg: Config):
+    if cfg.late_start_zones is not None and r.zone not in cfg.late_start_zones:
+        return None
     if r.today == today and r.today_first is not None:
         return None
     if r.days_seen >= cfg.min_days_for_checks and r.median_first is not None:

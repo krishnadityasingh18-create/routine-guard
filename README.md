@@ -17,7 +17,7 @@ deterministic, no ML.
 | **night_activity** | activity outside active hours in a 15-min slot used on < 5% of learned days | O(1) per event |
 
 Learning is O(1) per event; closing a day is O(D log D) with D = 14. Each rule fires at most
-once per local day (per zone, or per source for long_inactivity). Every threshold is in `Config`.
+once per local day (per zone, or per source for long_inactivity). Every threshold is in `Config`, including which zones can be "late" (`late_start_zones`; Saathi uses kitchen and bedroom).
 
 ## Install
 

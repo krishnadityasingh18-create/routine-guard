@@ -62,3 +62,4 @@ class Config:
     activity_types: frozenset[str] | None = None  # None: every event type counts
     night_zones: frozenset[str] | None = None  # None: night check on every zone
     cold_start_zones: frozenset[str] = frozenset()  # late_start before min_days, vs default
+    late_start_zones: frozenset[str] | None = None  # None: every zone; e.g. {"kitchen", "bedroom"}

@@ -136,3 +136,10 @@ def test_readme_example_runs():
     readme = Path(__file__).parents[1].joinpath("README.md").read_text(encoding="utf-8")
     code = re.search(r"```python\n(.*?)```", readme, re.DOTALL).group(1)
     exec(compile(code, "README.md", "exec"), {})
+
+
+def test_late_start_zones_limits_which_zones_can_be_late():
+    cfg = Config(tz="UTC", late_start_zones=frozenset({"kitchen"}))
+    door = learned("front_door", first="06:30")
+    assert [a for a in check_tick([door], at("12:00"), cfg) if a.kind == "late_start"] == []
+    assert [a.kind for a in check_tick([learned("kitchen")], at("12:00"), cfg)][0] == "late_start"
