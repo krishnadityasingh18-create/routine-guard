@@ -143,3 +143,17 @@ def test_late_start_zones_limits_which_zones_can_be_late():
     door = learned("front_door", first="06:30")
     assert [a for a in check_tick([door], at("12:00"), cfg) if a.kind == "late_start"] == []
     assert [a.kind for a in check_tick([learned("kitchen")], at("12:00"), cfg)][0] == "late_start"
+
+
+def test_night_alert_repeats_after_30_min_at_most_3_per_night():
+    r = learned("front_door", first="06:30")
+    nxt = TODAY + timedelta(days=1)
+    times = [("23:30", TODAY), ("23:40", TODAY), ("00:10", nxt), ("02:10", nxt), ("02:30", nxt)]
+    times += [("03:00", nxt)]
+    fired = [t for t, d in times if check_event(r, ev("front_door", t, d), CFG)]
+    assert fired == ["23:30", "00:10", "02:10"]
+    assert check_event(r, ev("front_door", "02:10", TODAY + timedelta(days=2)), CFG)
+    r2 = from_dict(to_dict(learned("front_door", first="06:30")))
+    cfg = Config(tz="UTC", night_repeat_minutes=60, night_max_per_night=1)
+    assert check_event(r2, ev("front_door", "01:00"), cfg)
+    assert check_event(from_dict(to_dict(r2)), ev("front_door", "03:00"), cfg) is None

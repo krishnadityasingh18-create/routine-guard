@@ -1,10 +1,12 @@
-"""Three explainable rules. Each kind fires at most once per local day (per zone, or per
-source for long_inactivity), remembered in `Routine.fired` — persist routines after a check.
+"""Three explainable rules. late_start fires at most once per local day per zone,
+long_inactivity once per day per source, night_activity up to 3 times a night, 30 min apart.
+What fired is remembered in `Routine.fired` — persist routines after a check.
 
 - late_start: no activity in a zone today by usual first time + max(3 x MAD, 30 min).
 - long_inactivity: in active hours, nothing anywhere in the source for 4 h, counting the
   night only from the start of active hours.
-- night_activity: activity outside active hours in a slot used on < 5% of learned days.
+- night_activity: activity outside active hours in a slot used on < 5% of learned days;
+  again for a later rare event >= 30 min after the zone's previous one, max 3 a night.
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ def check_event(r: Routine, e: Event, cfg: Config) -> Anomaly | None:
     slot = minute // SLOT_MINUTES
     if _active(minute, cfg) or r.hist[slot] >= cfg.night_rare_ratio * r.days_seen:
         return None
-    if not _claim(r, "night_activity", t.date()):
+    if not _claim_night(r, e.ts, _night_of(t.date(), minute, cfg), cfg):
         return None
     return Anomaly(
         source=e.source,
@@ -115,6 +117,29 @@ def _claim(r: Routine, kind: str, day: date) -> bool:
     if r.fired.get(kind) == day.isoformat():
         return False
     r.fired[kind] = day.isoformat()
+    return True
+
+
+def _night_of(day: date, minute: int, cfg: Config) -> date:
+    """The evening a night belongs to: 02:10 on the 23rd is the night of the 22nd."""
+    return day if minute >= _minutes(cfg.waking_end) else day - timedelta(days=1)
+
+
+def _claim_night(r: Routine, ts: datetime, night: date, cfg: Config) -> bool:
+    """Allow up to `night_max_per_night` alerts per night, `night_repeat_minutes` apart. O(1)."""
+    f = r.fired
+    count = 0
+    if f.get("night_activity") == night.isoformat():
+        last = f.get("night_activity_last")  # missing on routines stored before this rule
+        count = int(f.get("night_activity_count", "1"))
+        too_soon = last is None or ts - datetime.fromisoformat(last) < timedelta(
+            minutes=cfg.night_repeat_minutes
+        )
+        if too_soon or count >= cfg.night_max_per_night:
+            return False
+    f["night_activity"] = night.isoformat()
+    f["night_activity_count"] = str(count + 1)
+    f["night_activity_last"] = ts.isoformat()
     return True
 
 

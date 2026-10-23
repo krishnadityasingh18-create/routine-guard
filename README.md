@@ -14,10 +14,11 @@ deterministic, no ML.
 |---|---|---|
 | **late_start** | a zone has no activity today by its usual first time + max(3 × MAD, 30 min) | O(zones) per tick |
 | **long_inactivity** | nothing anywhere for 4 h during active hours (night counted from the start of active hours) | O(zones) per tick |
-| **night_activity** | activity outside active hours in a 15-min slot used on < 5% of learned days | O(1) per event |
+| **night_activity** | activity outside active hours in a 15-min slot used on < 5% of learned days; again ≥ 30 min after the last one, max 3 a night | O(1) per event |
 
-Learning is O(1) per event; closing a day is O(D log D) with D = 14. Each rule fires at most
-once per local day (per zone, or per source for long_inactivity). Every threshold is in `Config`, including which zones can be "late" (`late_start_zones`; Saathi uses kitchen and bedroom).
+Learning is O(1) per event; closing a day is O(D log D) with D = 14. late_start fires at most
+once per local day per zone, long_inactivity once per day per source, and night_activity up to
+`night_max_per_night` (3) times a night, `night_repeat_minutes` (30) apart. Every threshold is in `Config`, including which zones can be "late" (`late_start_zones`; Saathi uses kitchen and bedroom).
 
 ## Install
 

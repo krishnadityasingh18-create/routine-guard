@@ -59,6 +59,8 @@ class Config:
     night_rare_ratio: float = 0.05
     min_days_for_checks: int = 5
     default_first_activity: str = "08:00"
+    night_repeat_minutes: int = 30  # a later rare night event in the zone alerts again
+    night_max_per_night: int = 3
     activity_types: frozenset[str] | None = None  # None: every event type counts
     night_zones: frozenset[str] | None = None  # None: night check on every zone
     cold_start_zones: frozenset[str] = frozenset()  # late_start before min_days, vs default
